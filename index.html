@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>CIA直前確認ノート</title>
+  <meta name="theme-color" content="#176b63">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="CIA直前確認ノート">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div>
+        <p class="eyebrow">CIA Exam Study Notes</p>
+        <h1>CIA直前確認ノート</h1>
+      </div>
+      <button class="ghost-button" id="quickModeButton" type="button">直前確認</button>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section class="panel ai-panel" aria-labelledby="aiImportTitle">
+      <div class="section-heading">
+        <div>
+          <h2 id="aiImportTitle">AI学習ログ取り込み</h2>
+          <p class="section-note">ChatGPTに整理してもらったJSONを貼ると、Part・分野別に正確に保存します。</p>
+        </div>
+      </div>
+
+      <div class="ai-actions">
+        <button class="secondary-button" id="copyPromptButton" type="button">依頼文をコピー</button>
+        <button class="ghost-button" id="pasteChatButton" type="button">貼り付け</button>
+      </div>
+
+      <label>
+        <span>整理済みJSON または未整理チャット履歴</span>
+        <textarea id="chatHistory" rows="10" placeholder="推奨: 依頼文をコピーしてChatGPTに送信し、返ってきたJSONを貼り付け。未整理の履歴を貼った場合は1件の未整理ログとして保存します。"></textarea>
+      </label>
+
+      <div class="form-row">
+        <label>
+          <span>取り込み先Part</span>
+          <select id="chatPart">
+            <option value="auto">自動判定</option>
+            <option value="Part1">Part1</option>
+            <option value="Part2">Part2</option>
+            <option value="Part3">Part3</option>
+          </select>
+        </label>
+
+        <label>
+          <span>初期理解度</span>
+          <select id="chatUnderstanding">
+            <option value="低" selected>低</option>
+            <option value="中">中</option>
+            <option value="高">高</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="data-actions">
+        <button class="primary-button" id="importChatButton" type="button">取り込んで保存</button>
+        <button class="secondary-button" id="previewChatButton" type="button">取り込みプレビュー</button>
+      </div>
+
+      <div class="classification-preview" id="classificationPreview">
+        <p class="empty-message">分類結果のプレビューがここに表示されます。</p>
+      </div>
+    </section>
+
+    <section class="panel form-panel" aria-labelledby="formTitle">
+      <div class="section-heading">
+        <h2 id="formTitle">学習メモ登録</h2>
+        <button class="text-button hidden" id="cancelEditButton" type="button">編集をやめる</button>
+      </div>
+
+      <form id="memoForm">
+        <input type="hidden" id="memoId">
+
+        <label>
+          <span>タイトル</span>
+          <input id="title" type="text" placeholder="例：3線モデルと内部監査の役割" required>
+        </label>
+
+        <div class="form-row">
+          <label>
+            <span>CIA Part</span>
+            <select id="part" required>
+              <option value="Part1">Part1</option>
+              <option value="Part2">Part2</option>
+              <option value="Part3">Part3</option>
+            </select>
+          </label>
+
+          <label>
+            <span>カテゴリ</span>
+            <input id="category" type="text" placeholder="任意">
+          </label>
+        </div>
+
+        <label>
+          <span>内容メモ</span>
+          <textarea id="content" rows="5" placeholder="分からなかった用語・論点・整理したいポイント" required></textarea>
+        </label>
+
+        <label>
+          <span>試験でのひっかけポイント</span>
+          <textarea id="trap" rows="4" placeholder="問題文で迷いやすい表現、選択肢の見分け方など"></textarea>
+        </label>
+
+        <div class="form-row">
+          <label>
+            <span>理解度</span>
+            <select id="understanding">
+              <option value="低">低</option>
+              <option value="中">中</option>
+              <option value="高">高</option>
+            </select>
+          </label>
+
+          <label>
+            <span>重要度</span>
+            <select id="importance">
+              <option value="1">★1</option>
+              <option value="2">★2</option>
+              <option value="3" selected>★3</option>
+              <option value="4">★4</option>
+              <option value="5">★5</option>
+            </select>
+          </label>
+        </div>
+
+        <button class="primary-button" type="submit" id="submitButton">登録する</button>
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="filtersTitle">
+      <div class="section-heading">
+        <h2 id="filtersTitle">フィルター</h2>
+        <button class="text-button" id="resetFiltersButton" type="button">リセット</button>
+      </div>
+
+      <div class="filters">
+        <label>
+          <span>Part</span>
+          <select id="filterPart">
+            <option value="all">すべて</option>
+            <option value="Part1">Part1</option>
+            <option value="Part2">Part2</option>
+            <option value="Part3">Part3</option>
+          </select>
+        </label>
+
+        <label>
+          <span>理解度</span>
+          <select id="filterUnderstanding">
+            <option value="all">すべて</option>
+            <option value="低">低</option>
+            <option value="中">中</option>
+            <option value="高">高</option>
+          </select>
+        </label>
+
+        <label>
+          <span>並び替え</span>
+          <select id="sortOrder">
+            <option value="newest">新しい順</option>
+            <option value="importanceDesc">重要度が高い順</option>
+            <option value="importanceAsc">重要度が低い順</option>
+          </select>
+        </label>
+
+        <label class="search-field">
+          <span>キーワード検索</span>
+          <input id="searchKeyword" type="search" placeholder="タイトル・内容・カテゴリ">
+        </label>
+      </div>
+    </section>
+
+    <section class="panel review-panel" aria-labelledby="reviewTitle">
+      <div class="section-heading">
+        <div>
+          <h2 id="reviewTitle">直前確認モード</h2>
+          <p class="section-note">理解度「低」または重要度★4以上を1件ずつ確認</p>
+        </div>
+        <button class="secondary-button" id="startReviewButton" type="button">開始</button>
+      </div>
+
+      <div class="review-card" id="reviewCard">
+        <p class="empty-message">直前確認を開始すると、優先度の高いメモがここに表示されます。</p>
+      </div>
+
+      <div class="review-actions">
+        <button class="ghost-button" id="prevReviewButton" type="button" disabled>前へ</button>
+        <span id="reviewCounter">0 / 0</span>
+        <button class="ghost-button" id="nextReviewButton" type="button" disabled>次へ</button>
+      </div>
+    </section>
+
+    <section class="panel list-panel" aria-labelledby="listTitle">
+      <div class="section-heading">
+        <div>
+          <h2 id="listTitle">メモ一覧</h2>
+          <p class="section-note" id="memoCount">0件</p>
+        </div>
+      </div>
+      <div class="memo-grid" id="memoList"></div>
+    </section>
+
+    <section class="panel summary-panel" aria-labelledby="summaryTitle">
+      <div class="section-heading">
+        <div>
+          <h2 id="summaryTitle">学習まとめ</h2>
+          <p class="section-note">保存したAI学習ログから、直前確認用に集計します。</p>
+        </div>
+        <button class="text-button" id="copySummaryButton" type="button">コピー</button>
+      </div>
+      <div class="summary-box" id="summaryBox"></div>
+    </section>
+
+    <section class="panel grouped-panel" aria-labelledby="groupedTitle">
+      <div class="section-heading">
+        <div>
+          <h2 id="groupedTitle">分野別確認資料</h2>
+          <p class="section-note">Partとカテゴリごとに、保存済みログを資料として整理します。</p>
+        </div>
+        <button class="text-button" id="copyGroupedButton" type="button">コピー</button>
+      </div>
+      <div class="grouped-notes" id="groupedNotes"></div>
+    </section>
+
+    <section class="panel data-panel" aria-labelledby="dataTitle">
+      <div class="section-heading">
+        <h2 id="dataTitle">データ管理</h2>
+      </div>
+      <div class="data-actions">
+        <button class="secondary-button" id="exportButton" type="button">JSONエクスポート</button>
+        <label class="import-button">
+          JSONインポート
+          <input id="importFile" type="file" accept="application/json,.json">
+        </label>
+      </div>
+      <p class="section-note">インポートすると、現在のデータに追加されます。同じIDのメモは上書きされます。</p>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
