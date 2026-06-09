@@ -398,6 +398,8 @@ function parseChatInput() {
       source: history
     }));
   } catch (error) {
+    const smartQuoteItems = parseSmartQuoteMemos(history);
+    if (smartQuoteItems.length > 0) return smartQuoteItems;
     const structuredItems = parseLooseStructuredMemos(history);
     if (structuredItems.length > 0) return structuredItems;
     return [makeUnstructuredLogMemo(history, error)];
@@ -454,6 +456,44 @@ function parseJsonRelaxed(text) {
     }
   }
   throw lastError;
+}
+
+function parseSmartQuoteMemos(text) {
+  const normalized = text
+    .replace(/^\uFEFF/, "")
+    .replace(/\u00A0/g, " ")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/，/g, ",")
+    .replace(/：/g, ":");
+  const objectMatches = normalized.match(/\{[\s\S]*?\}/g) || [];
+
+  return objectMatches.map((objectText) => {
+    const memo = {
+      title: extractJsonLikeField(objectText, "title"),
+      part: extractJsonLikeField(objectText, "part"),
+      category: extractJsonLikeField(objectText, "category"),
+      content: extractJsonLikeField(objectText, "content"),
+      trap: extractJsonLikeField(objectText, "trap"),
+      understanding: extractJsonLikeField(objectText, "understanding"),
+      importance: extractJsonLikeField(objectText, "importance")
+    };
+
+    if (!memo.title && !memo.content) return null;
+    return normalizeMemo(memo, {
+      understanding: elements.chatUnderstanding.value,
+      importance: 4,
+      source: text
+    });
+  }).filter(Boolean);
+}
+
+function extractJsonLikeField(objectText, key) {
+  const keys = ["title", "part", "category", "content", "trap", "understanding", "importance"];
+  const nextKeys = keys.filter((item) => item !== key).join("|");
+  const pattern = new RegExp(`"${key}"\\s*:\\s*(?:"([\\s\\S]*?)(?="\\s*,\\s*"(?:${nextKeys})"|"\\s*\\})|([^,}\\n]+))`, "i");
+  const match = objectText.match(pattern);
+  return match ? String(match[1] || match[2] || "").trim() : "";
 }
 
 function parseLooseStructuredMemos(text) {
