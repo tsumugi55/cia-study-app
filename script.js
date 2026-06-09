@@ -390,7 +390,7 @@ function parseChatInput() {
   }
 
   try {
-    const parsed = JSON.parse(extractJsonCandidate(history));
+    const parsed = parseJsonRelaxed(extractJsonCandidate(history));
     const rawItems = getImportItems(parsed);
     return rawItems.map((item) => normalizeMemo(item, {
       part: detectPart(history),
@@ -427,6 +427,33 @@ function extractJsonCandidate(text) {
   if (objectCandidate && (!arrayCandidate || firstObject < firstArray)) return objectCandidate;
   if (arrayCandidate) return arrayCandidate;
   return cleanText;
+}
+
+function parseJsonRelaxed(text) {
+  const candidates = [
+    text,
+    text
+      .replace(/[“”]/g, '"')
+      .replace(/[‘’]/g, "'")
+      .replace(/，/g, ",")
+      .replace(/：/g, ":"),
+    text
+      .replace(/[“”]/g, '"')
+      .replace(/[‘’]/g, "'")
+      .replace(/，/g, ",")
+      .replace(/：/g, ":")
+      .replace(/,\s*([}\]])/g, "$1")
+  ];
+
+  let lastError;
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
 }
 
 function parseLooseStructuredMemos(text) {
@@ -850,7 +877,7 @@ function parseImportText(text) {
   const cleanText = extractJsonCandidate(text);
   if (!cleanText) throw new Error("JSONファイルが空です");
 
-  const parsed = JSON.parse(cleanText);
+  const parsed = parseJsonRelaxed(cleanText);
   const items = getImportItems(parsed);
   if (items.length === 0) throw new Error("取り込めるメモがありません");
   return items;
