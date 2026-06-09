@@ -390,7 +390,7 @@ function parseChatInput() {
   }
 
   try {
-    const parsed = JSON.parse(history);
+    const parsed = JSON.parse(extractJsonCandidate(history));
     const rawItems = getImportItems(parsed);
     return rawItems.map((item) => normalizeMemo(item, {
       part: detectPart(history),
@@ -400,6 +400,28 @@ function parseChatInput() {
   } catch {
     return [makeUnstructuredLogMemo(history)];
   }
+}
+
+function extractJsonCandidate(text) {
+  const cleanText = text.replace(/^\uFEFF/, "").trim();
+  const fenced = cleanText.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced) return fenced[1].trim();
+
+  const firstObject = cleanText.indexOf("{");
+  const lastObject = cleanText.lastIndexOf("}");
+  const firstArray = cleanText.indexOf("[");
+  const lastArray = cleanText.lastIndexOf("]");
+
+  const objectCandidate = firstObject >= 0 && lastObject > firstObject
+    ? cleanText.slice(firstObject, lastObject + 1)
+    : "";
+  const arrayCandidate = firstArray >= 0 && lastArray > firstArray
+    ? cleanText.slice(firstArray, lastArray + 1)
+    : "";
+
+  if (objectCandidate && (!arrayCandidate || firstObject < firstArray)) return objectCandidate;
+  if (arrayCandidate) return arrayCandidate;
+  return cleanText;
 }
 
 function makeUnstructuredLogMemo(history) {
@@ -784,7 +806,7 @@ function getImportItems(imported) {
 }
 
 function parseImportText(text) {
-  const cleanText = text.replace(/^\uFEFF/, "").trim();
+  const cleanText = extractJsonCandidate(text);
   if (!cleanText) throw new Error("JSONファイルが空です");
 
   const parsed = JSON.parse(cleanText);
@@ -887,8 +909,9 @@ elements.pasteChatButton.addEventListener("click", async () => {
 elements.previewChatButton.addEventListener("click", () => {
   const memos = parseChatInput();
   if (!memos) return;
+  const isUnstructured = memos.length === 1 && memos[0].category === "未整理ログ";
   elements.classificationPreview.innerHTML = `
-    <p class="section-note">${memos.length}件を取り込み対象として認識しました。</p>
+    <p class="section-note">${isUnstructured ? "JSONとして認識できなかったため、未整理ログ1件として扱います。" : `${memos.length}件のJSONメモとして認識しました。`}</p>
     ${memos.map((memo) => `
       <article class="preview-item">
         <strong>${escapeHtml(memo.title)}</strong>
