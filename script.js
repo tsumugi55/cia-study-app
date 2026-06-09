@@ -397,13 +397,18 @@ function parseChatInput() {
       understanding: elements.chatUnderstanding.value,
       source: history
     }));
-  } catch {
-    return [makeUnstructuredLogMemo(history)];
+  } catch (error) {
+    const structuredItems = parseLooseStructuredMemos(history);
+    if (structuredItems.length > 0) return structuredItems;
+    return [makeUnstructuredLogMemo(history, error)];
   }
 }
 
 function extractJsonCandidate(text) {
-  const cleanText = text.replace(/^\uFEFF/, "").trim();
+  const cleanText = text
+    .replace(/^\uFEFF/, "")
+    .replace(/\u00A0/g, " ")
+    .trim();
   const fenced = cleanText.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (fenced) return fenced[1].trim();
 
@@ -424,14 +429,50 @@ function extractJsonCandidate(text) {
   return cleanText;
 }
 
-function makeUnstructuredLogMemo(history) {
+function parseLooseStructuredMemos(text) {
+  const blocks = text
+    .split(/\n\s*(?=(?:[-*]\s*)?(?:\d+[.．）)]\s*)?(?:タイトル|title)\s*[:：])/i)
+    .map((block) => block.trim())
+    .filter((block) => /(タイトル|title)\s*[:：]/i.test(block));
+
+  return blocks.map((block) => {
+    const title = extractLooseField(block, ["タイトル", "title"]);
+    const part = extractLooseField(block, ["part", "Part", "CIA Part", "パート"]);
+    const category = extractLooseField(block, ["category", "カテゴリ", "分野"]);
+    const content = extractLooseField(block, ["content", "内容", "内容メモ", "要点"]);
+    const trap = extractLooseField(block, ["trap", "ひっかけポイント", "注意点", "迷いやすい点"]);
+    const importance = extractLooseField(block, ["importance", "重要度"]);
+
+    if (!title && !content) return null;
+
+    return normalizeMemo({}, {
+      title: title || compactText(block, 48),
+      part: part || detectPart(block),
+      category: category || "未分類",
+      content: content || compactText(block, 1200),
+      trap: trap || "試験直前に、選択肢で混同しやすい語句・前提条件・優先順位を確認する。",
+      understanding: elements.chatUnderstanding.value,
+      importance: importance || 4,
+      source: block
+    });
+  }).filter(Boolean);
+}
+
+function extractLooseField(text, labels) {
+  const escaped = labels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  const pattern = new RegExp(`(?:^|\\n)\\s*(?:[-*]\\s*)?(?:${escaped})\\s*[:：]\\s*([\\s\\S]*?)(?=\\n\\s*(?:[-*]\\s*)?(?:タイトル|title|part|Part|CIA Part|パート|category|カテゴリ|分野|content|内容|内容メモ|要点|trap|ひっかけポイント|注意点|迷いやすい点|importance|重要度)\\s*[:：]|$)`, "i");
+  const match = text.match(pattern);
+  return match ? match[1].trim().replace(/^["“”]|["“”]$/g, "") : "";
+}
+
+function makeUnstructuredLogMemo(history, error) {
   const classification = classifyBlock(history);
   return normalizeMemo({}, {
     title: `未整理チャットログ ${new Date().toLocaleDateString("ja-JP")}`,
     part: classification.part,
     category: "未整理ログ",
     content: compactText(history, 1800),
-    trap: "このログは自動分割していません。ChatGPTに整理済みJSONを作成してもらうと、分野別資料として正確に保存できます。",
+    trap: `JSONとして読み取れませんでした。${error?.message ? `理由: ${error.message}` : "ChatGPTに整理済みJSONを作成してもらうと、分野別資料として正確に保存できます。"}`,
     understanding: elements.chatUnderstanding.value,
     importance: 3,
     source: history
@@ -917,12 +958,13 @@ elements.previewChatButton.addEventListener("click", () => {
         <strong>${escapeHtml(memo.title)}</strong>
         <div class="tag-row">
           <span class="tag">${escapeHtml(memo.part)}</span>
-          <span class="tag">${escapeHtml(memo.category)}</span>
-          <span class="tag">重要度 ${starText(memo.importance)}</span>
-        </div>
-        <p>${escapeHtml(compactText(memo.content, 160))}</p>
-      </article>
-    `).join("")}
+        <span class="tag">${escapeHtml(memo.category)}</span>
+        <span class="tag">重要度 ${starText(memo.importance)}</span>
+      </div>
+      <p>${escapeHtml(compactText(memo.content, 160))}</p>
+      ${isUnstructured ? `<div class="trap-box"><strong>読み取り状態</strong><div>${escapeHtml(memo.trap)}</div></div>` : ""}
+    </article>
+  `).join("")}
   `;
   showToast(`${memos.length}件を認識しました`);
 });
