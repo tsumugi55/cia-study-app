@@ -9,6 +9,9 @@ const state = {
 const elements = {
   form: document.getElementById("memoForm"),
   memoId: document.getElementById("memoId"),
+  exam: document.getElementById("exam"),
+  customExam: document.getElementById("customExam"),
+  customExamWrap: document.getElementById("customExamWrap"),
   title: document.getElementById("title"),
   part: document.getElementById("part"),
   category: document.getElementById("category"),
@@ -17,6 +20,9 @@ const elements = {
   understanding: document.getElementById("understanding"),
   importance: document.getElementById("importance"),
   chatHistory: document.getElementById("chatHistory"),
+  chatExam: document.getElementById("chatExam"),
+  customChatExam: document.getElementById("customChatExam"),
+  customChatExamWrap: document.getElementById("customChatExamWrap"),
   chatPart: document.getElementById("chatPart"),
   chatUnderstanding: document.getElementById("chatUnderstanding"),
   copyPromptButton: document.getElementById("copyPromptButton"),
@@ -26,6 +32,7 @@ const elements = {
   classificationPreview: document.getElementById("classificationPreview"),
   submitButton: document.getElementById("submitButton"),
   cancelEditButton: document.getElementById("cancelEditButton"),
+  filterExam: document.getElementById("filterExam"),
   filterPart: document.getElementById("filterPart"),
   filterUnderstanding: document.getElementById("filterUnderstanding"),
   sortOrder: document.getElementById("sortOrder"),
@@ -48,22 +55,112 @@ const elements = {
   toast: document.getElementById("toast")
 };
 
+const EXAM_CONFIGS = {
+  "CIA Part 2": [
+    "個別業務の計画",
+    "情報の収集・分析・評価",
+    "個別業務の監督",
+    "結果の伝達と進捗確認",
+    "未分類"
+  ],
+  "G検定": [
+    "人工知能の基礎",
+    "機械学習",
+    "ディープラーニングの概要",
+    "ディープラーニングの要素技術",
+    "ディープラーニングの応用",
+    "AIの社会実装",
+    "法律・倫理・ガバナンス",
+    "数理・統計",
+    "未分類"
+  ]
+};
+
 const CATEGORY_RULES = [
-  { part: "Part1", category: "基準・倫理・独立性", keywords: ["基準", "iia", "倫理", "独立", "客観", "専門職", "品質", "内部監査の使命"] },
-  { part: "Part1", category: "ガバナンス・リスク・統制", keywords: ["ガバナンス", "リスク", "統制", "コントロール", "erm", "3線", "三線", "取締役会", "リスクマネジメント"] },
-  { part: "Part2", category: "監査計画・リスク評価", keywords: ["監査計画", "計画", "リスク評価", "監査範囲", "スコープ", "資源配分", "優先順位", "エンゲージメント計画"] },
-  { part: "Part2", category: "監査実施・証拠・サンプリング", keywords: ["証拠", "サンプリング", "テスト", "監査手続", "調書", "観察", "確認", "分析的", "母集団", "サンプル"] },
-  { part: "Part2", category: "報告・フォローアップ", keywords: ["報告", "発見事項", "改善", "勧告", "フォローアップ", "残余リスク", "受容", "コミュニケーション"] },
-  { part: "Part3", category: "IT・情報セキュリティ", keywords: ["it", "システム", "セキュリティ", "アクセス", "クラウド", "暗号", "バックアップ", "データ", "サイバー", "変更管理"] },
-  { part: "Part3", category: "会計・財務・ファイナンス", keywords: ["会計", "財務", "財務諸表", "原価", "予算", "npv", "irr", "キャッシュフロー", "比率", "在庫"] },
-  { part: "Part3", category: "経営・戦略・業務", keywords: ["戦略", "経営", "マーケティング", "業務", "プロセス", "サプライ", "kpi", "組織", "プロジェクト"] },
-  { part: "Part1", category: "不正リスク", keywords: ["不正", "fraud", "横領", "改ざん", "兆候", "職業的不正"] }
+  { exam: "CIA Part 2", part: "個別業務の計画", category: "計画・リスク評価", keywords: ["計画", "目的", "範囲", "リスク評価", "資源配分", "作業プログラム"] },
+  { exam: "CIA Part 2", part: "情報の収集・分析・評価", category: "監査証拠・分析", keywords: ["証拠", "十分性", "適切性", "サンプリング", "テスト", "監査手続", "調書", "分析", "母集団"] },
+  { exam: "CIA Part 2", part: "個別業務の監督", category: "監督・品質", keywords: ["監督", "レビュー", "品質", "スタッフ", "指導"] },
+  { exam: "CIA Part 2", part: "結果の伝達と進捗確認", category: "報告・フォローアップ", keywords: ["報告", "伝達", "発見事項", "勧告", "フォローアップ", "是正措置", "残余リスク"] },
+  { exam: "G検定", part: "人工知能の基礎", category: "AIの歴史・探索・推論", keywords: ["人工知能", "探索", "推論", "エキスパートシステム", "aiの歴史"] },
+  { exam: "G検定", part: "機械学習", category: "機械学習", keywords: ["機械学習", "教師あり", "教師なし", "強化学習", "回帰", "分類", "評価指標"] },
+  { exam: "G検定", part: "ディープラーニングの概要", category: "ニューラルネットワーク", keywords: ["ディープラーニング", "ニューラルネットワーク", "誤差逆伝播", "勾配消失"] },
+  { exam: "G検定", part: "ディープラーニングの要素技術", category: "要素技術", keywords: ["cnn", "rnn", "lstm", "transformer", "attention", "正則化", "最適化"] },
+  { exam: "G検定", part: "ディープラーニングの応用", category: "応用分野", keywords: ["画像認識", "自然言語処理", "生成モデル", "音声認識", "ロボティクス"] },
+  { exam: "G検定", part: "AIの社会実装", category: "社会実装", keywords: ["社会実装", "mlops", "プロジェクト", "データ収集", "poc"] },
+  { exam: "G検定", part: "法律・倫理・ガバナンス", category: "法律・倫理", keywords: ["著作権", "個人情報", "倫理", "公平性", "説明可能性", "ガバナンス"] },
+  { exam: "G検定", part: "数理・統計", category: "数理・統計", keywords: ["確率", "統計", "微分", "線形代数", "行列", "ベイズ"] }
 ];
+
+function selectedExam(select, customInput) {
+  if (select.value === "custom") {
+    return customInput.value.trim() || "その他の試験";
+  }
+  return select.value;
+}
+
+function setExamSelect(select, customInput, wrap, exam) {
+  if (EXAM_CONFIGS[exam]) {
+    select.value = exam;
+    customInput.value = "";
+    wrap.classList.add("hidden");
+  } else {
+    select.value = "custom";
+    customInput.value = exam || "";
+    wrap.classList.remove("hidden");
+  }
+}
+
+function partOptionsFor(exam) {
+  return EXAM_CONFIGS[exam] || ["未分類"];
+}
+
+function replaceOptions(select, values, firstOption) {
+  const current = select.value;
+  const options = firstOption ? [firstOption, ...values] : values;
+  select.innerHTML = options
+    .map((item) => `<option value="${escapeHtml(item.value || item)}">${escapeHtml(item.label || item)}</option>`)
+    .join("");
+  if (options.some((item) => (item.value || item) === current)) select.value = current;
+}
+
+function refreshExamControls(target = "all") {
+  if (target === "all" || target === "chat") {
+    const exam = selectedExam(elements.chatExam, elements.customChatExam);
+    elements.customChatExamWrap.classList.toggle("hidden", elements.chatExam.value !== "custom");
+    replaceOptions(elements.chatPart, partOptionsFor(exam), { value: "auto", label: "自動判定" });
+  }
+  if (target === "all" || target === "form") {
+    const exam = selectedExam(elements.exam, elements.customExam);
+    elements.customExamWrap.classList.toggle("hidden", elements.exam.value !== "custom");
+    replaceOptions(elements.part, partOptionsFor(exam));
+  }
+}
+
+function refreshFilterOptions() {
+  const currentExam = elements.filterExam.value;
+  const exams = Array.from(new Set([
+    "CIA Part 2",
+    "G検定",
+    ...state.memos.map((memo) => memo.exam).filter(Boolean)
+  ]));
+  replaceOptions(elements.filterExam, exams, { value: "all", label: "すべて" });
+  if (exams.includes(currentExam) || currentExam === "all") elements.filterExam.value = currentExam;
+
+  const selected = elements.filterExam.value;
+  const parts = selected === "all"
+    ? Array.from(new Set(state.memos.map((memo) => memo.part).filter(Boolean)))
+    : Array.from(new Set([
+        ...partOptionsFor(selected),
+        ...state.memos.filter((memo) => memo.exam === selected).map((memo) => memo.part)
+      ]));
+  replaceOptions(elements.filterPart, parts, { value: "all", label: "すべて" });
+}
 
 function loadMemos() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    state.memos = saved ? JSON.parse(saved) : [];
+    const parsed = saved ? JSON.parse(saved) : [];
+    state.memos = Array.isArray(parsed) ? parsed.map((memo) => normalizeMemo(memo)) : [];
   } catch {
     state.memos = [];
     showToast("保存データの読み込みに失敗しました");
@@ -104,6 +201,7 @@ function getFormMemo() {
 
   return {
     id: existingId || createId(),
+    exam: selectedExam(elements.exam, elements.customExam),
     title: elements.title.value.trim(),
     part: elements.part.value,
     category: elements.category.value.trim(),
@@ -128,13 +226,9 @@ function pickValue(item, keys, fallback = "") {
   return fallback;
 }
 
-function normalizePartValue(value, fallback = "Part1") {
-  const text = String(value || fallback).trim();
-  if (["Part1", "Part2", "Part3"].includes(text)) return text;
-  if (/part\s*3/i.test(text) || text === "3" || text.includes("3")) return "Part3";
-  if (/part\s*2/i.test(text) || text === "2" || text.includes("2")) return "Part2";
-  if (/part\s*1/i.test(text) || text === "1" || text.includes("1")) return "Part1";
-  return fallback;
+function normalizePartValue(value, fallback = "未分類") {
+  const text = String(value || fallback || "未分類").trim();
+  return text || "未分類";
 }
 
 function normalizeUnderstandingValue(value, fallback = "低") {
@@ -154,11 +248,16 @@ function normalizeImportanceValue(value, fallback = 4) {
 }
 
 function normalizeMemo(item, fallback = {}) {
+  const legacyPart = pickValue(item, ["part", "Part", "CIA Part", "CIAパート", "パート"], fallback.part || "");
+  const inferredLegacyExam = /^Part\s*[123]$/i.test(String(legacyPart))
+    ? `CIA Part ${String(legacyPart).match(/[123]/)?.[0] || "2"}`
+    : "CIA Part 2";
+  const exam = pickValue(item, ["exam", "test", "試験", "試験名"], fallback.exam || inferredLegacyExam);
   const title = pickValue(item, ["title", "タイトル", "題名", "論点", "用語"], fallback.title || "無題");
   const category = pickValue(item, ["category", "カテゴリ", "分野", "科目"], fallback.category || "");
   const content = pickValue(item, ["content", "memo", "内容メモ", "内容", "説明", "要点", "整理"], fallback.content || "");
   const trap = pickValue(item, ["trap", "trapPoint", "point", "ひっかけポイント", "試験でのひっかけポイント", "注意点", "迷いやすい点"], fallback.trap || "");
-  const part = pickValue(item, ["part", "Part", "CIA Part", "CIAパート", "パート"], fallback.part || "Part1");
+  const part = legacyPart || fallback.part || "未分類";
   const understanding = pickValue(item, ["understanding", "理解度"], fallback.understanding || "低");
   const importance = pickValue(item, ["importance", "重要度"], fallback.importance || 4);
   const question = pickValue(item, ["question", "質問", "不明点", "聞いたこと"], fallback.question || "");
@@ -167,8 +266,9 @@ function normalizeMemo(item, fallback = {}) {
 
   return {
     id: item.id || createId(),
+    exam: String(exam),
     title: String(title),
-    part: normalizePartValue(part, fallback.part || "Part1"),
+    part: normalizePartValue(part, fallback.part || "未分類"),
     category: String(category),
     content: String(content),
     trap: String(trap),
@@ -186,11 +286,19 @@ function detectPart(text) {
   const selected = elements.chatPart.value;
   if (selected !== "auto") return selected;
 
-  const source = text.toLowerCase();
-  if (source.includes("part3") || source.includes("part 3")) return "Part3";
-  if (source.includes("part2") || source.includes("part 2")) return "Part2";
-  if (source.includes("part1") || source.includes("part 1")) return "Part1";
-  return "Part1";
+  const exam = selectedExam(elements.chatExam, elements.customChatExam);
+  const source = String(text || "").toLowerCase();
+  let best = { part: "未分類", score: 0 };
+  CATEGORY_RULES
+    .filter((rule) => rule.exam === exam)
+    .forEach((rule) => {
+      const score = rule.keywords.reduce(
+        (total, keyword) => total + (source.includes(keyword.toLowerCase()) ? 1 : 0),
+        0
+      );
+      if (score > best.score) best = { part: rule.part, score };
+    });
+  return best.part;
 }
 
 function extractSection(text, labels) {
@@ -317,16 +425,17 @@ function splitByConversationTurns(lines) {
 }
 
 function classifyBlock(text) {
+  const exam = selectedExam(elements.chatExam, elements.customChatExam);
   const normalized = text.toLowerCase();
-  let best = { part: detectPart(text), category: "未分類", score: 0 };
+  let best = { exam, part: detectPart(text), category: "未分類", score: 0 };
 
-  CATEGORY_RULES.forEach((rule) => {
+  CATEGORY_RULES.filter((rule) => rule.exam === exam).forEach((rule) => {
     const score = rule.keywords.reduce((total, keyword) => {
       return total + (normalized.includes(keyword.toLowerCase()) ? 1 : 0);
     }, 0);
 
     if (score > best.score) {
-      best = { part: rule.part, category: rule.category, score };
+      best = { exam, part: rule.part, category: rule.category, score };
     }
   });
 
@@ -368,6 +477,7 @@ function makeMemoFromBlock(block) {
   const importantWords = ["重要", "頻出", "ひっかけ", "間違え", "苦手", "覚える", "注意"];
 
   return normalizeMemo({}, {
+    exam: classification.exam,
     title: extractTitleFromBlock(block),
     part: classification.part,
     category: classification.category,
@@ -384,6 +494,12 @@ function makeMemoFromBlock(block) {
 function parseChatInput() {
   const history = elements.chatHistory.value.trim();
 
+  if (elements.chatExam.value === "custom" && !elements.customChatExam.value.trim()) {
+    showToast("対象となる試験名を入力してください");
+    elements.customChatExam.focus();
+    return null;
+  }
+
   if (!history) {
     showToast("整理済みJSONまたはチャット履歴を貼り付けてください");
     return null;
@@ -392,7 +508,9 @@ function parseChatInput() {
   try {
     const parsed = parseJsonRelaxed(extractJsonCandidate(history));
     const rawItems = getImportItems(parsed);
-    return rawItems.map((item) => normalizeMemo(item, {
+    const exam = selectedExam(elements.chatExam, elements.customChatExam);
+    return rawItems.map((item) => normalizeMemo({ ...item, exam }, {
+      exam,
       part: detectPart(history),
       understanding: elements.chatUnderstanding.value,
       source: history
@@ -470,6 +588,7 @@ function parseSmartQuoteMemos(text) {
 
   return objectMatches.map((objectText) => {
     const memo = {
+      exam: extractJsonLikeField(objectText, "exam"),
       title: extractJsonLikeField(objectText, "title"),
       part: extractJsonLikeField(objectText, "part"),
       category: extractJsonLikeField(objectText, "category"),
@@ -480,7 +599,9 @@ function parseSmartQuoteMemos(text) {
     };
 
     if (!memo.title && !memo.content) return null;
-    return normalizeMemo(memo, {
+    const exam = selectedExam(elements.chatExam, elements.customChatExam);
+    return normalizeMemo({ ...memo, exam }, {
+      exam,
       understanding: elements.chatUnderstanding.value,
       importance: 4,
       source: text
@@ -489,7 +610,7 @@ function parseSmartQuoteMemos(text) {
 }
 
 function extractJsonLikeField(objectText, key) {
-  const keys = ["title", "part", "category", "content", "trap", "understanding", "importance"];
+  const keys = ["exam", "title", "part", "category", "content", "trap", "understanding", "importance"];
   const nextKeys = keys.filter((item) => item !== key).join("|");
   const pattern = new RegExp(`"${key}"\\s*:\\s*(?:"([\\s\\S]*?)(?="\\s*,\\s*"(?:${nextKeys})"|"\\s*\\})|([^,}\\n]+))`, "i");
   const match = objectText.match(pattern);
@@ -503,6 +624,7 @@ function parseLooseStructuredMemos(text) {
     .filter((block) => /(タイトル|title)\s*[:：]/i.test(block));
 
   return blocks.map((block) => {
+    const exam = selectedExam(elements.chatExam, elements.customChatExam);
     const title = extractLooseField(block, ["タイトル", "title"]);
     const part = extractLooseField(block, ["part", "Part", "CIA Part", "パート"]);
     const category = extractLooseField(block, ["category", "カテゴリ", "分野"]);
@@ -513,6 +635,7 @@ function parseLooseStructuredMemos(text) {
     if (!title && !content) return null;
 
     return normalizeMemo({}, {
+      exam,
       title: title || compactText(block, 48),
       part: part || detectPart(block),
       category: category || "未分類",
@@ -527,7 +650,7 @@ function parseLooseStructuredMemos(text) {
 
 function extractLooseField(text, labels) {
   const escaped = labels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
-  const pattern = new RegExp(`(?:^|\\n)\\s*(?:[-*]\\s*)?(?:${escaped})\\s*[:：]\\s*([\\s\\S]*?)(?=\\n\\s*(?:[-*]\\s*)?(?:タイトル|title|part|Part|CIA Part|パート|category|カテゴリ|分野|content|内容|内容メモ|要点|trap|ひっかけポイント|注意点|迷いやすい点|importance|重要度)\\s*[:：]|$)`, "i");
+  const pattern = new RegExp(`(?:^|\\n)\\s*(?:[-*]\\s*)?(?:${escaped})\\s*[:：]\\s*([\\s\\S]*?)(?=\\n\\s*(?:[-*]\\s*)?(?:exam|試験|試験名|タイトル|title|part|Part|CIA Part|パート|category|カテゴリ|分野|content|内容|内容メモ|要点|trap|ひっかけポイント|注意点|迷いやすい点|importance|重要度)\\s*[:：]|$)`, "i");
   const match = text.match(pattern);
   return match ? match[1].trim().replace(/^["“”]|["“”]$/g, "") : "";
 }
@@ -535,6 +658,7 @@ function extractLooseField(text, labels) {
 function makeUnstructuredLogMemo(history, error) {
   const classification = classifyBlock(history);
   return normalizeMemo({}, {
+    exam: classification.exam,
     title: `未整理チャットログ ${new Date().toLocaleDateString("ja-JP")}`,
     part: classification.part,
     category: "未整理ログ",
@@ -550,12 +674,15 @@ function resetForm() {
   elements.form.reset();
   elements.memoId.value = "";
   elements.importance.value = "3";
+  refreshExamControls("form");
   elements.submitButton.textContent = "登録する";
   elements.cancelEditButton.classList.add("hidden");
 }
 
 function putMemoIntoForm(memo) {
   elements.memoId.value = "";
+  setExamSelect(elements.exam, elements.customExam, elements.customExamWrap, memo.exam);
+  refreshExamControls("form");
   elements.title.value = memo.title;
   elements.part.value = memo.part;
   elements.category.value = memo.category;
@@ -579,14 +706,17 @@ function showToast(message) {
 
 function filteredMemos() {
   const keyword = elements.searchKeyword.value.trim().toLowerCase();
+  const exam = elements.filterExam.value;
   const part = elements.filterPart.value;
   const understanding = elements.filterUnderstanding.value;
 
   const results = state.memos.filter((memo) => {
+    const matchesExam = exam === "all" || memo.exam === exam;
     const matchesPart = part === "all" || memo.part === part;
     const matchesUnderstanding = understanding === "all" || memo.understanding === understanding;
     const searchable = [
       memo.title,
+      memo.exam,
       memo.part,
       memo.category,
       memo.content,
@@ -597,7 +727,7 @@ function filteredMemos() {
       memo.understanding,
       starText(memo.importance)
     ].join(" ").toLowerCase();
-    return matchesPart && matchesUnderstanding && searchable.includes(keyword);
+    return matchesExam && matchesPart && matchesUnderstanding && searchable.includes(keyword);
   });
 
   if (elements.sortOrder.value === "importanceDesc") {
@@ -625,9 +755,10 @@ function renderMemoCard(memo) {
     <article class="memo-card ${memo.importance >= 4 ? "high-importance" : ""}">
       <div class="memo-card-header">
         <h3 class="memo-title">${escapeHtml(memo.title)}</h3>
-        <span class="tag">${escapeHtml(memo.part)}</span>
+        <span class="tag">${escapeHtml(memo.exam)}</span>
       </div>
       <div class="tag-row">
+        <span class="tag">${escapeHtml(memo.part)}</span>
         ${categoryHtml}
         <span class="tag ${understandingClass(memo.understanding)}">理解度 ${escapeHtml(memo.understanding)}</span>
         <span class="tag">重要度 ${starText(memo.importance)}</span>
@@ -644,6 +775,7 @@ function renderMemoCard(memo) {
 }
 
 function renderList() {
+  refreshFilterOptions();
   const memos = filteredMemos();
   elements.memoCount.textContent = `${memos.length}件`;
   renderSummary();
@@ -659,9 +791,9 @@ function renderList() {
 
 function buildSummaryText() {
   const total = state.memos.length;
-  const parts = ["Part1", "Part2", "Part3"].map((part) => {
-    const count = state.memos.filter((memo) => memo.part === part).length;
-    return `${part}: ${count}件`;
+  const exams = Array.from(new Set(state.memos.map((memo) => memo.exam))).map((exam) => {
+    const count = state.memos.filter((memo) => memo.exam === exam).length;
+    return `${exam}: ${count}件`;
   });
   const weak = state.memos.filter((memo) => memo.understanding === "低");
   const important = state.memos.filter((memo) => memo.importance >= 4);
@@ -671,9 +803,9 @@ function buildSummaryText() {
     .slice(0, 8);
 
   const lines = [
-    "CIA直前確認ノート 学習まとめ",
+    "試験直前確認ノート 学習まとめ",
     `総メモ数: ${total}件`,
-    ...parts,
+    ...exams,
     `理解度が低い: ${weak.length}件`,
     `重要度★4以上: ${important.length}件`,
     "",
@@ -684,7 +816,7 @@ function buildSummaryText() {
     lines.push("なし");
   } else {
     reviewItems.forEach((memo, index) => {
-      lines.push(`${index + 1}. [${memo.part}] ${memo.title} / 理解度${memo.understanding} / ${starText(memo.importance)}`);
+      lines.push(`${index + 1}. [${memo.exam} / ${memo.part}] ${memo.title} / 理解度${memo.understanding} / ${starText(memo.importance)}`);
       if (memo.trap) lines.push(`   ひっかけ: ${memo.trap}`);
     });
   }
@@ -705,7 +837,7 @@ function renderSummary() {
     .slice(0, 5);
 
   const itemsHtml = reviewItems.length
-    ? `<ol class="summary-list">${reviewItems.map((memo) => `<li>${escapeHtml(memo.title)} <span class="tag">${escapeHtml(memo.part)}</span></li>`).join("")}</ol>`
+    ? `<ol class="summary-list">${reviewItems.map((memo) => `<li>${escapeHtml(memo.title)} <span class="tag">${escapeHtml(memo.exam)}</span> <span class="tag">${escapeHtml(memo.part)}</span></li>`).join("")}</ol>`
     : '<p class="empty-message">優先見直し項目はまだありません。</p>';
 
   elements.summaryBox.innerHTML = `
@@ -725,9 +857,10 @@ function renderSummary() {
 function groupedMemos() {
   const groups = new Map();
   state.memos.forEach((memo) => {
-    const key = `${memo.part}__${memo.category || "未分類"}`;
+    const key = `${memo.exam}__${memo.part}__${memo.category || "未分類"}`;
     if (!groups.has(key)) {
       groups.set(key, {
+        exam: memo.exam,
         part: memo.part,
         category: memo.category || "未分類",
         memos: []
@@ -737,7 +870,7 @@ function groupedMemos() {
   });
 
   return Array.from(groups.values()).sort((a, b) => {
-    return a.part.localeCompare(b.part) || a.category.localeCompare(b.category);
+    return a.exam.localeCompare(b.exam) || a.part.localeCompare(b.part) || a.category.localeCompare(b.category);
   });
 }
 
@@ -746,7 +879,7 @@ function buildGroupedText() {
   if (groups.length === 0) return "保存済みメモはまだありません。";
 
   return groups.map((group) => {
-    const lines = [`【${group.part} / ${group.category}】`];
+    const lines = [`【${group.exam} / ${group.part} / ${group.category}】`];
     group.memos
       .sort((a, b) => b.importance - a.importance || new Date(b.updatedAt) - new Date(a.updatedAt))
       .forEach((memo, index) => {
@@ -763,7 +896,7 @@ function renderGroupedNotes() {
   const groups = groupedMemos();
 
   if (groups.length === 0) {
-    elements.groupedNotes.innerHTML = '<p class="empty-message">保存すると、ここにPart・分野別の確認資料が表示されます。</p>';
+    elements.groupedNotes.innerHTML = '<p class="empty-message">保存すると、ここに試験・Part・分野別の確認資料が表示されます。</p>';
     return;
   }
 
@@ -781,7 +914,7 @@ function renderGroupedNotes() {
 
     return `
       <details class="group-block" open>
-        <summary>${escapeHtml(group.part)} / ${escapeHtml(group.category)} <span>${group.memos.length}件</span></summary>
+        <summary>${escapeHtml(group.exam)} / ${escapeHtml(group.part)} / ${escapeHtml(group.category)} <span>${group.memos.length}件</span></summary>
         <ol class="group-list">${items}</ol>
       </details>
     `;
@@ -793,6 +926,8 @@ function editMemo(id) {
   if (!memo) return;
 
   elements.memoId.value = memo.id;
+  setExamSelect(elements.exam, elements.customExam, elements.customExamWrap, memo.exam);
+  refreshExamControls("form");
   elements.title.value = memo.title;
   elements.part.value = memo.part;
   elements.category.value = memo.category;
@@ -845,9 +980,10 @@ function renderReview() {
     <article class="review-card-inner ${memo.importance >= 4 ? "high-importance" : ""}">
       <div class="memo-card-header">
         <h3 class="memo-title">${escapeHtml(memo.title)}</h3>
-        <span class="tag">${escapeHtml(memo.part)}</span>
+        <span class="tag">${escapeHtml(memo.exam)}</span>
       </div>
       <div class="tag-row">
+        <span class="tag">${escapeHtml(memo.part)}</span>
         ${memo.category ? `<span class="tag">${escapeHtml(memo.category)}</span>` : ""}
         <span class="tag ${understandingClass(memo.understanding)}">理解度 ${escapeHtml(memo.understanding)}</span>
         <span class="tag">重要度 ${starText(memo.importance)}</span>
@@ -878,8 +1014,8 @@ function raiseUnderstanding(id) {
 
 function exportJson() {
   const data = JSON.stringify({
-    app: "CIA直前確認ノート",
-    version: 2,
+    app: "試験直前確認ノート",
+    version: 3,
     exportedAt: new Date().toISOString(),
     memos: state.memos
   }, null, 2);
@@ -888,7 +1024,7 @@ function exportJson() {
   const link = document.createElement("a");
   const date = new Date().toISOString().slice(0, 10);
   link.href = url;
-  link.download = `cia-notes-${date}.json`;
+  link.download = `exam-notes-${date}.json`;
   link.click();
   URL.revokeObjectURL(url);
   showToast("JSONをエクスポートしました");
@@ -948,6 +1084,11 @@ function importJson(file) {
 
 elements.form.addEventListener("submit", (event) => {
   event.preventDefault();
+  if (elements.exam.value === "custom" && !elements.customExam.value.trim()) {
+    showToast("試験名を入力してください");
+    elements.customExam.focus();
+    return;
+  }
   const memo = getFormMemo();
 
   if (!memo.title || !memo.content) {
@@ -971,18 +1112,30 @@ elements.form.addEventListener("submit", (event) => {
 });
 
 elements.copyPromptButton.addEventListener("click", async () => {
-  const prompt = `このチャットで私が質問したCIA試験の不明点を、試験直前に見返すための学習メモとして整理してください。
+  if (elements.chatExam.value === "custom" && !elements.customChatExam.value.trim()) {
+    showToast("対象となる試験名を入力してください");
+    elements.customChatExam.focus();
+    return;
+  }
+  const exam = selectedExam(elements.chatExam, elements.customChatExam);
+  const fixedPart = elements.chatPart.value;
+  const availableParts = partOptionsFor(exam).map((part) => `「${part}」`).join("、");
+  const partRule = fixedPart === "auto"
+    ? `partは内容から ${availableParts} のいずれかを選び、判断できなければ「未分類」にしてください。`
+    : `partは必ず「${fixedPart}」にしてください。`;
+  const prompt = `このチャットで私が質問した「${exam}」の不明点を、試験直前に見返すための学習メモとして整理してください。
 
-必ず次のJSONだけを返してください。説明文やMarkdownは不要です。
+必ず次の形式の有効なJSONだけを返してください。説明文、前置き、Markdown、コードフェンスは不要です。
 
 {
   "memos": [
     {
+      "exam": "${exam}",
       "title": "論点名を短く",
-      "part": "Part1 / Part2 / Part3 のどれか",
-      "category": "分野名。例: 監査計画・リスク評価、監査実施・証拠、報告・フォローアップ、ガバナンス・統制、IT、会計・財務など",
-      "content": "要点。試験直前に読み返せるように簡潔に整理",
-      "trap": "試験でのひっかけポイント、選択肢で迷いやすい点",
+      "part": "${fixedPart === "auto" ? "未分類" : fixedPart}",
+      "category": "具体的な分野名",
+      "content": "正解の理由と要点。試験直前に読み返せるよう簡潔に整理",
+      "trap": "ひっかけポイント、選択肢で迷いやすい点、自分が間違えた理由",
       "understanding": "低",
       "importance": 4
     }
@@ -990,11 +1143,15 @@ elements.copyPromptButton.addEventListener("click", async () => {
 }
 
 条件:
-- 私の質問1つにつき、原則1メモにしてください。
+- examは必ず「${exam}」にしてください。
+- ${partRule}
+- 私の質問1つにつき原則1メモとし、独立した問題が複数あれば分けてください。
 - 同じ論点は統合してください。
-- partは必ず Part1 / Part2 / Part3 の表記にしてください。
-- importanceは1から5の数字にしてください。
-- JSONとしてそのままパースできる形にしてください。`;
+- 問題文、選択肢、正解、自分の回答、出典が不明な場合は推測して作らないでください。
+- understandingは「低」「中」「高」のいずれか、根拠がなければ「低」にしてください。
+- importanceは1から5の整数にしてください。
+- ダブルクォートを使い、コメントや末尾カンマを入れないでください。
+- JSONとしてそのまま読み取れる形にしてください。`;
 
   try {
     await navigator.clipboard.writeText(prompt);
@@ -1024,6 +1181,7 @@ elements.previewChatButton.addEventListener("click", () => {
       <article class="preview-item">
         <strong>${escapeHtml(memo.title)}</strong>
         <div class="tag-row">
+          <span class="tag">${escapeHtml(memo.exam)}</span>
           <span class="tag">${escapeHtml(memo.part)}</span>
         <span class="tag">${escapeHtml(memo.category)}</span>
         <span class="tag">重要度 ${starText(memo.importance)}</span>
@@ -1081,11 +1239,12 @@ elements.reviewCard.addEventListener("click", (event) => {
   raiseUnderstanding(button.dataset.id);
 });
 
-[elements.filterPart, elements.filterUnderstanding, elements.sortOrder, elements.searchKeyword].forEach((input) => {
+[elements.filterExam, elements.filterPart, elements.filterUnderstanding, elements.sortOrder, elements.searchKeyword].forEach((input) => {
   input.addEventListener("input", renderList);
 });
 
 elements.resetFiltersButton.addEventListener("click", () => {
+  elements.filterExam.value = "all";
   elements.filterPart.value = "all";
   elements.filterUnderstanding.value = "all";
   elements.sortOrder.value = "newest";
@@ -1094,6 +1253,8 @@ elements.resetFiltersButton.addEventListener("click", () => {
 });
 
 elements.cancelEditButton.addEventListener("click", resetForm);
+elements.chatExam.addEventListener("change", () => refreshExamControls("chat"));
+elements.exam.addEventListener("change", () => refreshExamControls("form"));
 elements.startReviewButton.addEventListener("click", () => startReview(true));
 elements.quickModeButton.addEventListener("click", () => {
   document.getElementById("reviewTitle").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1113,6 +1274,7 @@ elements.importFile.addEventListener("change", (event) => {
   if (file) importJson(file);
 });
 
+refreshExamControls();
 loadMemos();
 renderList();
 renderReview();
