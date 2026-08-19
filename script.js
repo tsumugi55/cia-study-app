@@ -234,7 +234,12 @@ function pickValue(item, keys, fallback = "") {
 }
 
 function normalizePartValue(value, fallback = "未分類") {
-  const text = String(value || fallback || "未分類").trim();
+  const text = String(value || fallback || "未分類")
+    .replace(/[！-～]/g, (character) => String.fromCharCode(character.charCodeAt(0) - 0xfee0))
+    .replace(/　/g, " ")
+    .trim();
+  const numberedPart = text.match(/^(?:part|パート)\s*([0-9]+)$/i);
+  if (numberedPart) return `Part ${Number(numberedPart[1])}`;
   return text || "未分類";
 }
 
