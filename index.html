@@ -28,7 +28,7 @@
         <div>
           <h2 id="aiImportTitle">AI学習ログ取り込み</h2>
           <p class="section-note">ChatGPTに整理してもらったJSONを貼ると、試験・Part・分野別に正確に保存します。</p>
-          <p class="section-note">Version 20260726-2</p>
+          <p class="section-note">Version 20260819-1</p>
         </div>
       </div>
 
@@ -220,6 +220,17 @@
           <h2 id="reviewTitle">直前確認モード</h2>
           <p class="section-note">理解度「低」または重要度★4以上を1件ずつ確認</p>
         </div>
+      </div>
+
+      <div class="review-setup">
+        <label>
+          <span>確認する試験</span>
+          <select id="reviewExam" aria-label="直前確認する試験">
+            <option value="all">すべての試験</option>
+            <option value="CIA Part 2">CIA Part 2</option>
+            <option value="G検定">G検定</option>
+          </select>
+        </label>
         <button class="secondary-button" id="startReviewButton" type="button">開始</button>
       </div>
 
@@ -283,6 +294,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="script.js?v=20260726-2"></script>
+  <script src="script.js?v=20260819-1"></script>
 </body>
 </html>

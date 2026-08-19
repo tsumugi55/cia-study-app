@@ -40,6 +40,7 @@ const elements = {
   resetFiltersButton: document.getElementById("resetFiltersButton"),
   memoList: document.getElementById("memoList"),
   memoCount: document.getElementById("memoCount"),
+  reviewExam: document.getElementById("reviewExam"),
   startReviewButton: document.getElementById("startReviewButton"),
   quickModeButton: document.getElementById("quickModeButton"),
   reviewCard: document.getElementById("reviewCard"),
@@ -154,6 +155,12 @@ function refreshFilterOptions() {
         ...state.memos.filter((memo) => memo.exam === selected).map((memo) => memo.part)
       ]));
   replaceOptions(elements.filterPart, parts, { value: "all", label: "すべて" });
+
+  const currentReviewExam = elements.reviewExam.value;
+  replaceOptions(elements.reviewExam, exams, { value: "all", label: "すべての試験" });
+  if (exams.includes(currentReviewExam) || currentReviewExam === "all") {
+    elements.reviewExam.value = currentReviewExam;
+  }
 }
 
 function loadMemos() {
@@ -954,13 +961,16 @@ function deleteMemo(id) {
 }
 
 function startReview(announce = true) {
+  const reviewExam = elements.reviewExam.value;
   state.reviewItems = state.memos
+    .filter((memo) => reviewExam === "all" || memo.exam === reviewExam)
     .filter((memo) => memo.understanding === "低" || memo.importance >= 4)
     .sort((a, b) => b.importance - a.importance || new Date(b.updatedAt) - new Date(a.updatedAt));
   state.reviewIndex = 0;
   renderReview();
   if (announce) {
-    showToast(state.reviewItems.length > 0 ? "直前確認を開始しました" : "確認対象のメモがありません");
+    const examLabel = reviewExam === "all" ? "すべての試験" : reviewExam;
+    showToast(state.reviewItems.length > 0 ? `${examLabel}の直前確認を開始しました` : `${examLabel}に確認対象のメモがありません`);
   }
 }
 
@@ -972,7 +982,8 @@ function renderReview() {
   elements.nextReviewButton.disabled = state.reviewIndex >= total - 1;
 
   if (!memo) {
-    elements.reviewCard.innerHTML = '<p class="empty-message">理解度「低」または重要度★4以上のメモはありません。</p>';
+    const examLabel = elements.reviewExam.value === "all" ? "すべての試験" : elements.reviewExam.value;
+    elements.reviewCard.innerHTML = `<p class="empty-message">${escapeHtml(examLabel)}に、理解度「低」または重要度★4以上のメモはありません。</p>`;
     return;
   }
 
@@ -1256,6 +1267,7 @@ elements.cancelEditButton.addEventListener("click", resetForm);
 elements.chatExam.addEventListener("change", () => refreshExamControls("chat"));
 elements.exam.addEventListener("change", () => refreshExamControls("form"));
 elements.startReviewButton.addEventListener("click", () => startReview(true));
+elements.reviewExam.addEventListener("change", () => startReview(false));
 elements.quickModeButton.addEventListener("click", () => {
   document.getElementById("reviewTitle").scrollIntoView({ behavior: "smooth", block: "start" });
   startReview(true);
