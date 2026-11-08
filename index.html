@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="CIA直前確認ノート">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20261108-6">
 </head>
 <body>
   <header class="app-header">
@@ -28,7 +28,7 @@
         <div>
           <h2 id="aiImportTitle">AI学習ログ取り込み</h2>
           <p class="section-note">ChatGPTに整理してもらったJSONを貼ると、Part・分野別に正確に保存します。</p>
-          <p class="section-note" id="appVersion">Version 20261108-5</p>
+          <p class="section-note" id="appVersion">Version 20261108-6</p>
         </div>
       </div>
 
@@ -71,6 +71,85 @@
       <div class="classification-preview" id="classificationPreview">
         <p class="empty-message">分類結果のプレビューがここに表示されます。</p>
       </div>
+    </section>
+
+    <section class="panel review-panel" aria-labelledby="reviewTitle">
+      <div class="section-heading">
+        <div>
+          <h2 id="reviewTitle">直前確認モード</h2>
+        </div>
+        <button class="secondary-button" id="startReviewButton" type="button">開始</button>
+      </div>
+
+      <div class="form-row">
+        <label><span>Part</span><select id="reviewPart"><option value="all">すべて</option><option value="Part1">Part1</option><option value="Part2">Part2</option><option value="Part3">Part3</option></select></label>
+        <label><span>分野</span><select id="reviewCategory"><option value="all">すべて</option></select></label>
+        <label><span>理解度</span><select id="reviewUnderstanding"><option value="all">すべて</option><option value="低" selected>低</option><option value="中">中</option><option value="高">高</option></select></label>
+        <label><span>最低重要度</span><select id="reviewImportance"><option value="1">★1以上（すべて）</option><option value="2">★2以上</option><option value="3">★3以上</option><option value="4">★4以上</option><option value="5">★5のみ</option></select></label>
+      </div>
+
+      <div class="review-card" id="reviewCard">
+        <p class="empty-message">確認対象のメモはありません。</p>
+      </div>
+
+      <div class="review-actions">
+        <button class="ghost-button" id="prevReviewButton" type="button" disabled>前へ</button>
+        <span id="reviewCounter">0 / 0</span>
+        <button class="ghost-button" id="nextReviewButton" type="button" disabled>次へ</button>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="filtersTitle">
+      <div class="section-heading">
+        <h2 id="filtersTitle">フィルター</h2>
+        <button class="text-button" id="resetFiltersButton" type="button">リセット</button>
+      </div>
+
+      <div class="filters">
+        <label>
+          <span>Part</span>
+          <select id="filterPart">
+            <option value="all">すべて</option>
+            <option value="Part1">Part1</option>
+            <option value="Part2">Part2</option>
+            <option value="Part3">Part3</option>
+          </select>
+        </label>
+
+        <label>
+          <span>理解度</span>
+          <select id="filterUnderstanding">
+            <option value="all">すべて</option>
+            <option value="低">低</option>
+            <option value="中">中</option>
+            <option value="高">高</option>
+          </select>
+        </label>
+
+        <label>
+          <span>並び替え</span>
+          <select id="sortOrder">
+            <option value="newest">新しい順</option>
+            <option value="importanceDesc">重要度が高い順</option>
+            <option value="importanceAsc">重要度が低い順</option>
+          </select>
+        </label>
+
+        <label class="search-field">
+          <span>キーワード検索</span>
+          <input id="searchKeyword" type="search" placeholder="タイトル・内容・カテゴリ">
+        </label>
+      </div>
+    </section>
+
+    <section class="panel list-panel hidden" aria-labelledby="listTitle">
+      <div class="section-heading">
+        <div>
+          <h2 id="listTitle">メモ一覧</h2>
+          <p class="section-note" id="memoCount">0件</p>
+        </div>
+      </div>
+      <div class="memo-grid" id="memoList"></div>
     </section>
 
     <section class="panel form-panel hidden" aria-labelledby="formTitle">
@@ -139,85 +218,6 @@
       </form>
     </section>
 
-    <section class="panel" aria-labelledby="filtersTitle">
-      <div class="section-heading">
-        <h2 id="filtersTitle">フィルター</h2>
-        <button class="text-button" id="resetFiltersButton" type="button">リセット</button>
-      </div>
-
-      <div class="filters">
-        <label>
-          <span>Part</span>
-          <select id="filterPart">
-            <option value="all">すべて</option>
-            <option value="Part1">Part1</option>
-            <option value="Part2">Part2</option>
-            <option value="Part3">Part3</option>
-          </select>
-        </label>
-
-        <label>
-          <span>理解度</span>
-          <select id="filterUnderstanding">
-            <option value="all">すべて</option>
-            <option value="低">低</option>
-            <option value="中">中</option>
-            <option value="高">高</option>
-          </select>
-        </label>
-
-        <label>
-          <span>並び替え</span>
-          <select id="sortOrder">
-            <option value="newest">新しい順</option>
-            <option value="importanceDesc">重要度が高い順</option>
-            <option value="importanceAsc">重要度が低い順</option>
-          </select>
-        </label>
-
-        <label class="search-field">
-          <span>キーワード検索</span>
-          <input id="searchKeyword" type="search" placeholder="タイトル・内容・カテゴリ">
-        </label>
-      </div>
-    </section>
-
-    <section class="panel review-panel" aria-labelledby="reviewTitle">
-      <div class="section-heading">
-        <div>
-          <h2 id="reviewTitle">直前確認モード</h2>
-        </div>
-        <button class="secondary-button" id="startReviewButton" type="button">開始</button>
-      </div>
-
-      <div class="form-row">
-        <label><span>Part</span><select id="reviewPart"><option value="all">すべて</option><option value="Part1">Part1</option><option value="Part2">Part2</option><option value="Part3">Part3</option></select></label>
-        <label><span>分野</span><select id="reviewCategory"><option value="all">すべて</option></select></label>
-        <label><span>理解度</span><select id="reviewUnderstanding"><option value="all">すべて</option><option value="低" selected>低</option><option value="中">中</option><option value="高">高</option></select></label>
-        <label><span>最低重要度</span><select id="reviewImportance"><option value="1">★1以上（すべて）</option><option value="2">★2以上</option><option value="3">★3以上</option><option value="4">★4以上</option><option value="5">★5のみ</option></select></label>
-      </div>
-
-      <div class="review-card" id="reviewCard">
-        <p class="empty-message">確認対象のメモはありません。</p>
-      </div>
-
-      <div class="review-actions">
-        <button class="ghost-button" id="prevReviewButton" type="button" disabled>前へ</button>
-        <span id="reviewCounter">0 / 0</span>
-        <button class="ghost-button" id="nextReviewButton" type="button" disabled>次へ</button>
-      </div>
-    </section>
-
-    <section class="panel list-panel hidden" aria-labelledby="listTitle">
-      <div class="section-heading">
-        <div>
-          <h2 id="listTitle">メモ一覧</h2>
-          <p class="section-note" id="memoCount">0件</p>
-        </div>
-      </div>
-      <div class="memo-grid" id="memoList"></div>
-    </section>
-
     <section class="panel summary-panel" aria-labelledby="summaryTitle">
       <div class="section-heading">
         <div>
@@ -263,6 +263,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="script.js?v=20261108-5"></script>
+  <script src="script.js?v=20261108-6"></script>
 </body>
 </html>

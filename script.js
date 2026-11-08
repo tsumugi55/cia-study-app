@@ -1025,7 +1025,7 @@ function commitReplacement(items, storage = localStorage) {
 
 const replaceFile = document.getElementById("replaceFile");
 const replaceStatus = document.getElementById("replaceStatus");
-document.getElementById("appVersion").textContent = "Version 20261108-5（読み込み済み）";
+document.getElementById("appVersion").textContent = "Version 20261108-6（読み込み済み）";
 replaceFile.addEventListener("change", async () => {
   const file = replaceFile.files[0];
   if (!file) return;
