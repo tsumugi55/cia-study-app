@@ -3,7 +3,8 @@ const STORAGE_KEY = "ciaLastMinuteNotes";
 const state = {
   memos: [],
   reviewItems: [],
-  reviewIndex: 0
+  reviewIndex: 0,
+  listRequested: false
 };
 
 const elements = {
@@ -648,9 +649,11 @@ function renderList() {
   renderSummary();
   renderGroupedNotes();
   refreshReviewCategories();
-  const hasKeyword = elements.searchKeyword.value.trim().length > 0;
-  elements.memoList.closest(".list-panel").classList.toggle("hidden", !hasKeyword);
-  if (!hasKeyword) {
+  const showList = state.listRequested || elements.searchKeyword.value.trim().length > 0 ||
+    elements.filterPart.value !== "all" || elements.filterUnderstanding.value !== "all" ||
+    elements.sortOrder.value !== "newest";
+  elements.memoList.closest(".list-panel").classList.toggle("hidden", !showList);
+  if (!showList) {
     elements.memoList.innerHTML = "";
     elements.memoCount.textContent = "0件";
     return;
@@ -769,6 +772,7 @@ function buildGroupedText() {
 
 function renderGroupedNotes() {
   if (!elements.groupedNotes) return;
+  if (elements.groupedNotes.closest(".grouped-panel").classList.contains("hidden")) return;
   const groups = groupedMemos();
 
   if (groups.length === 0) {
@@ -1021,7 +1025,7 @@ function commitReplacement(items, storage = localStorage) {
 
 const replaceFile = document.getElementById("replaceFile");
 const replaceStatus = document.getElementById("replaceStatus");
-document.getElementById("appVersion").textContent = "Version 20261108-4（読み込み済み）";
+document.getElementById("appVersion").textContent = "Version 20261108-5（読み込み済み）";
 replaceFile.addEventListener("change", async () => {
   const file = replaceFile.files[0];
   if (!file) return;
@@ -1191,10 +1195,16 @@ elements.reviewCard.addEventListener("click", (event) => {
 });
 
 [elements.filterPart, elements.filterUnderstanding, elements.sortOrder, elements.searchKeyword].forEach((input) => {
-  input.addEventListener("input", renderList);
+  const updateList = () => {
+    state.listRequested = true;
+    renderList();
+  };
+  input.addEventListener("input", updateList);
+  input.addEventListener("change", updateList);
 });
 
 elements.resetFiltersButton.addEventListener("click", () => {
+  state.listRequested = false;
   elements.filterPart.value = "all";
   elements.filterUnderstanding.value = "all";
   elements.sortOrder.value = "newest";
@@ -1203,6 +1213,13 @@ elements.resetFiltersButton.addEventListener("click", () => {
 });
 
 elements.cancelEditButton.addEventListener("click", resetForm);
+document.getElementById("toggleGroupedButton").addEventListener("click", (event) => {
+  const panel = elements.groupedNotes.closest(".grouped-panel");
+  const isHidden = panel.classList.toggle("hidden");
+  event.currentTarget.setAttribute("aria-expanded", String(!isHidden));
+  event.currentTarget.textContent = isHidden ? "分野別確認資料を開く" : "分野別確認資料を閉じる";
+  if (!isHidden) renderGroupedNotes();
+});
 elements.startReviewButton.addEventListener("click", () => startReview(true));
 ["reviewPart", "reviewCategory", "reviewUnderstanding", "reviewImportance"].forEach((id) => {
   document.getElementById(id).addEventListener("change", () => startReview(false));

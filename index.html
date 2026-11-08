@@ -28,7 +28,7 @@
         <div>
           <h2 id="aiImportTitle">AI学習ログ取り込み</h2>
           <p class="section-note">ChatGPTに整理してもらったJSONを貼ると、Part・分野別に正確に保存します。</p>
-          <p class="section-note" id="appVersion">Version 20261108-4</p>
+          <p class="section-note" id="appVersion">Version 20261108-5</p>
         </div>
       </div>
 
@@ -229,7 +229,8 @@
       <div class="summary-box" id="summaryBox"></div>
     </section>
 
-    <section class="panel grouped-panel" aria-labelledby="groupedTitle">
+    <button class="secondary-button" id="toggleGroupedButton" type="button" aria-expanded="false" aria-controls="groupedPanel">分野別確認資料を開く</button>
+    <section class="panel grouped-panel hidden" id="groupedPanel" aria-labelledby="groupedTitle">
       <div class="section-heading">
         <div>
           <h2 id="groupedTitle">分野別確認資料</h2>
@@ -262,6 +263,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="script.js?v=20261108-4"></script>
+  <script src="script.js?v=20261108-5"></script>
 </body>
 </html>
