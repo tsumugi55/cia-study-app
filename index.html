@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>試験直前確認ノート</title>
+  <title>CIA直前確認ノート</title>
   <meta name="theme-color" content="#176b63">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="試験直前確認ノート">
+  <meta name="apple-mobile-web-app-title" content="CIA直前確認ノート">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css">
@@ -15,8 +15,8 @@
   <header class="app-header">
     <div class="header-inner">
       <div>
-        <p class="eyebrow">Exam Study Notes</p>
-        <h1>試験直前確認ノート</h1>
+        <p class="eyebrow">CIA Exam Study Notes</p>
+        <h1>CIA直前確認ノート</h1>
       </div>
       <button class="ghost-button" id="quickModeButton" type="button">直前確認</button>
     </div>
@@ -27,25 +27,9 @@
       <div class="section-heading">
         <div>
           <h2 id="aiImportTitle">AI学習ログ取り込み</h2>
-          <p class="section-note">ChatGPTに整理してもらったJSONを貼ると、試験・Part・分野別に正確に保存します。</p>
-          <p class="section-note">Version 20260819-2</p>
+          <p class="section-note">ChatGPTに整理してもらったJSONを貼ると、Part・分野別に正確に保存します。</p>
+          <p class="section-note" id="appVersion">Version 20261108-4</p>
         </div>
-      </div>
-
-      <div class="form-row exam-select-row">
-        <label>
-          <span>対象試験</span>
-          <select id="chatExam">
-            <option value="CIA Part 2" selected>CIA Part 2</option>
-            <option value="G検定">G検定</option>
-            <option value="custom">その他の試験</option>
-          </select>
-        </label>
-
-        <label class="hidden" id="customChatExamWrap">
-          <span>試験名</span>
-          <input id="customChatExam" type="text" placeholder="例：簿記2級、基本情報技術者">
-        </label>
       </div>
 
       <div class="ai-actions">
@@ -60,9 +44,12 @@
 
       <div class="form-row">
         <label>
-          <span>取り込み先Part・分野</span>
+          <span>取り込み先Part</span>
           <select id="chatPart">
             <option value="auto">自動判定</option>
+            <option value="Part1">Part1</option>
+            <option value="Part2">Part2</option>
+            <option value="Part3">Part3</option>
           </select>
         </label>
 
@@ -86,30 +73,14 @@
       </div>
     </section>
 
-    <section class="panel form-panel" aria-labelledby="formTitle">
+    <section class="panel form-panel hidden" aria-labelledby="formTitle">
       <div class="section-heading">
-        <h2 id="formTitle">学習メモ登録</h2>
+        <h2 id="formTitle">学習メモ編集</h2>
         <button class="text-button hidden" id="cancelEditButton" type="button">編集をやめる</button>
       </div>
 
       <form id="memoForm">
         <input type="hidden" id="memoId">
-
-        <div class="form-row exam-select-row">
-          <label>
-            <span>対象試験</span>
-            <select id="exam" required>
-              <option value="CIA Part 2" selected>CIA Part 2</option>
-              <option value="G検定">G検定</option>
-              <option value="custom">その他の試験</option>
-            </select>
-          </label>
-
-          <label class="hidden" id="customExamWrap">
-            <span>試験名</span>
-            <input id="customExam" type="text" placeholder="任意の試験名">
-          </label>
-        </div>
 
         <label>
           <span>タイトル</span>
@@ -118,8 +89,11 @@
 
         <div class="form-row">
           <label>
-            <span>Part・分野</span>
+            <span>CIA Part</span>
             <select id="part" required>
+              <option value="Part1">Part1</option>
+              <option value="Part2">Part2</option>
+              <option value="Part3">Part3</option>
             </select>
           </label>
 
@@ -161,7 +135,7 @@
           </label>
         </div>
 
-        <button class="primary-button" type="submit" id="submitButton">登録する</button>
+        <button class="primary-button" type="submit" id="submitButton">更新する</button>
       </form>
     </section>
 
@@ -173,18 +147,12 @@
 
       <div class="filters">
         <label>
-          <span>試験</span>
-          <select id="filterExam">
-            <option value="all">すべて</option>
-            <option value="CIA Part 2">CIA Part 2</option>
-            <option value="G検定">G検定</option>
-          </select>
-        </label>
-
-        <label>
-          <span>Part・分野</span>
+          <span>Part</span>
           <select id="filterPart">
             <option value="all">すべて</option>
+            <option value="Part1">Part1</option>
+            <option value="Part2">Part2</option>
+            <option value="Part3">Part3</option>
           </select>
         </label>
 
@@ -218,24 +186,19 @@
       <div class="section-heading">
         <div>
           <h2 id="reviewTitle">直前確認モード</h2>
-          <p class="section-note">理解度「低」または重要度★4以上を1件ずつ確認</p>
         </div>
-      </div>
-
-      <div class="review-setup">
-        <label>
-          <span>確認する試験</span>
-          <select id="reviewExam" aria-label="直前確認する試験">
-            <option value="all">すべての試験</option>
-            <option value="CIA Part 2">CIA Part 2</option>
-            <option value="G検定">G検定</option>
-          </select>
-        </label>
         <button class="secondary-button" id="startReviewButton" type="button">開始</button>
       </div>
 
+      <div class="form-row">
+        <label><span>Part</span><select id="reviewPart"><option value="all">すべて</option><option value="Part1">Part1</option><option value="Part2">Part2</option><option value="Part3">Part3</option></select></label>
+        <label><span>分野</span><select id="reviewCategory"><option value="all">すべて</option></select></label>
+        <label><span>理解度</span><select id="reviewUnderstanding"><option value="all">すべて</option><option value="低" selected>低</option><option value="中">中</option><option value="高">高</option></select></label>
+        <label><span>最低重要度</span><select id="reviewImportance"><option value="1">★1以上（すべて）</option><option value="2">★2以上</option><option value="3">★3以上</option><option value="4">★4以上</option><option value="5">★5のみ</option></select></label>
+      </div>
+
       <div class="review-card" id="reviewCard">
-        <p class="empty-message">直前確認を開始すると、優先度の高いメモがここに表示されます。</p>
+        <p class="empty-message">確認対象のメモはありません。</p>
       </div>
 
       <div class="review-actions">
@@ -245,7 +208,7 @@
       </div>
     </section>
 
-    <section class="panel list-panel" aria-labelledby="listTitle">
+    <section class="panel list-panel hidden" aria-labelledby="listTitle">
       <div class="section-heading">
         <div>
           <h2 id="listTitle">メモ一覧</h2>
@@ -270,7 +233,7 @@
       <div class="section-heading">
         <div>
           <h2 id="groupedTitle">分野別確認資料</h2>
-          <p class="section-note">試験・Part・カテゴリごとに、保存済みログを資料として整理します。</p>
+          <p class="section-note">Partとカテゴリごとに、保存済みログを資料として整理します。</p>
         </div>
         <button class="text-button" id="copyGroupedButton" type="button">コピー</button>
       </div>
@@ -289,11 +252,16 @@
         </label>
       </div>
       <p class="section-note">インポートすると、現在のデータに追加されます。同じIDのメモは上書きされます。</p>
+      <label class="import-button">
+        JSONで全データを置き換える
+        <input id="replaceFile" type="file" accept="application/json,.json">
+      </label>
+      <p id="replaceStatus" role="status" aria-live="polite"></p>
     </section>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="script.js?v=20260819-2"></script>
+  <script src="script.js?v=20261108-4"></script>
 </body>
 </html>
