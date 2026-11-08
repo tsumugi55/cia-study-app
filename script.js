@@ -104,9 +104,11 @@ function getFormMemo() {
   const current = state.memos.find((memo) => memo.id === existingId);
 
   return {
+    ...current,
     id: existingId || createId(),
     title: elements.title.value.trim(),
     part: elements.part.value,
+    exam: `CIA ${elements.part.value}`,
     category: elements.category.value.trim(),
     content: elements.content.value.trim(),
     trap: elements.trap.value.trim(),
@@ -169,7 +171,8 @@ function normalizeMemo(item, fallback = {}) {
   return {
     id: item.id || createId(),
     title: String(title),
-    part: normalizePartValue(part, fallback.part || "Part1"),
+    part: getMemoPart(item) || normalizePartValue(part, fallback.part || "Part1"),
+    exam: String(item.exam || ""),
     category: String(category),
     content: String(content),
     trap: String(trap),
@@ -579,13 +582,22 @@ function showToast(message) {
   }, 2300);
 }
 
+function getMemoPart(memo) {
+  const exam = String(memo.exam || "").normalize("NFKC").trim();
+  const examMatch = exam.match(/^(?:CIA\s*)?Part\s*([123])$/i);
+  if (examMatch) return `Part${examMatch[1]}`;
+  if (exam && !/^CIA/i.test(exam)) return "";
+  const partMatch = String(memo.part || "").normalize("NFKC").trim().match(/^(?:CIA\s*)?Part\s*([123])$/i);
+  return partMatch ? `Part${partMatch[1]}` : "";
+}
+
 function filteredMemos() {
   const keyword = elements.searchKeyword.value.trim().toLowerCase();
   const part = elements.filterPart.value;
   const understanding = elements.filterUnderstanding.value;
 
   const results = state.memos.filter((memo) => {
-    const matchesPart = part === "all" || memo.part === part;
+    const matchesPart = part === "all" || getMemoPart(memo) === part;
     const matchesUnderstanding = understanding === "all" || memo.understanding === understanding;
     const searchable = [
       memo.title,
@@ -808,7 +820,7 @@ function editMemo(id) {
   elements.form.closest(".form-panel").classList.remove("hidden");
   elements.memoId.value = memo.id;
   elements.title.value = memo.title;
-  elements.part.value = memo.part;
+  elements.part.value = getMemoPart(memo) || memo.part;
   elements.category.value = memo.category;
   elements.content.value = memo.content;
   elements.trap.value = memo.trap;
@@ -842,7 +854,7 @@ function refreshReviewCategories() {
 }
 
 function matchesReviewConditions(memo, conditions) {
-  const part = String(memo.exam || memo.part || "").replace(/\s/g, "").replace(/^CIA/i, "");
+  const part = getMemoPart(memo);
   return (conditions.part === "all" || part.toLowerCase() === conditions.part.toLowerCase()) &&
     (conditions.category === "all" || (memo.category || "未分類") === conditions.category) &&
     (conditions.understanding === "all" || memo.understanding === conditions.understanding) &&
@@ -1025,7 +1037,7 @@ function commitReplacement(items, storage = localStorage) {
 
 const replaceFile = document.getElementById("replaceFile");
 const replaceStatus = document.getElementById("replaceStatus");
-document.getElementById("appVersion").textContent = "Version 20261108-6（読み込み済み）";
+document.getElementById("appVersion").textContent = "Version 20261108-7（読み込み済み）";
 replaceFile.addEventListener("change", async () => {
   const file = replaceFile.files[0];
   if (!file) return;
